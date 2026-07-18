@@ -8,6 +8,7 @@
 - [x] Attention/ASR benchmark CLIs
 - [x] FastAPI ASR server
 - [x] pytest correctness tests
+- [x] n-gram speculative decoding with correctness + benchmark
 - [ ] README + docs complete
 
 ## v0.2

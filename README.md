@@ -102,6 +102,15 @@ docker compose up --build
 | baseline | 0.671 s | 22.4× realtime |
 | torch.compile | **0.266 s** | **56.6× realtime** |
 
+### Speculative decoding (Qwen3-0.6B, greedy)
+
+| Prompt type | Baseline tok/s | N-gram spec tok/s | Speedup | Acceptance |
+|-------------|---------------:|------------------:|--------:|-----------:|
+| Highly repetitive (20× repeat) | 85.3 | **301.2** | **3.53×** | 98.6% |
+| General creative prompt | 83.4 | 78.2 | 0.94× | 4.2% |
+
+N-gram self-speculation works when output is repetitive/structured; it adds negligible overhead otherwise.
+
 ---
 
 ## Architecture

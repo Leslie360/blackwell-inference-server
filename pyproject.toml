@@ -41,6 +41,7 @@ Issues = "https://github.com/Leslie360/blackwell-inference-server/issues"
 [project.scripts]
 blackwell-attn-bench = "blackwell_inference.bench.attention_cli:main"
 blackwell-asr-bench = "blackwell_inference.bench.asr_cli:main"
+blackwell-spec-bench = "blackwell_inference.bench.spec_cli:main"
 blackwell-serve = "blackwell_inference.serve.cli:main"
 
 [tool.setuptools.packages.find]
