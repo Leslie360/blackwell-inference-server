@@ -1,0 +1,50 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "blackwell-inference-kit"
+version = "0.1.0"
+description = "Inference optimization toolkit for consumer Blackwell GPUs (RTX 5070 Ti / SM120): custom attention kernels, ASR acceleration, benchmarking"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Your Name", email = "you@example.com"},
+]
+keywords = ["cuda", "attention", "inference", "blackwell", "sm120", "triton", "asr"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "torch>=2.8",
+    "triton>=3.3",
+    "numpy",
+    "soundfile",
+]
+
+[project.optional-dependencies]
+asr = ["transformers>=4.57", "modelscope", "qwen-asr"]
+server = ["fastapi", "uvicorn"]
+dev = ["pytest", "black", "isort", "ruff", "mypy", "pre-commit"]
+
+[project.urls]
+Homepage = "https://github.com/yourname/blackwell-inference-kit"
+Repository = "https://github.com/yourname/blackwell-inference-kit"
+Issues = "https://github.com/yourname/blackwell-inference-kit/issues"
+
+[project.scripts]
+blackwell-attn-bench = "blackwell_inference.bench.attention_cli:main"
+blackwell-asr-bench = "blackwell_inference.bench.asr_cli:main"
+blackwell-serve = "blackwell_inference.asr.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+blackwell_inference = ["**/*.cu", "**/*.cuh"]
