@@ -6,7 +6,7 @@ Thanks for your interest in contributing to Blackwell Inference Server.
 
 ```bash
 git clone https://github.com/Leslie360/-Blackwell-Inference-Server.git
-cd -Blackwell-Inference-Server
+cd -- -Blackwell-Inference-Server
 pip install -e .[dev]
 ```
 

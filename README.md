@@ -1,6 +1,5 @@
 # Blackwell Inference Server
 
-[![CI](https://github.com/Leslie360/-Blackwell-Inference-Server/workflows/CI/badge.svg)](https://github.com/Leslie360/-Blackwell-Inference-Server/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![CUDA 13.0](https://img.shields.io/badge/CUDA-13.0-green.svg)](https://developer.nvidia.com/cuda-toolkit)
@@ -44,7 +43,7 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
 
 ```bash
 git clone https://github.com/Leslie360/-Blackwell-Inference-Server.git
-cd -Blackwell-Inference-Server
+cd -- -Blackwell-Inference-Server
 pip install -e .[asr,server]
 ```
 
