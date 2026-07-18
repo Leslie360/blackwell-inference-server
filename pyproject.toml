@@ -34,9 +34,9 @@ server = ["fastapi", "uvicorn"]
 dev = ["pytest", "black", "isort", "ruff", "mypy", "pre-commit"]
 
 [project.urls]
-Homepage = "https://github.com/Leslie360/-Blackwell-Inference-Server"
-Repository = "https://github.com/Leslie360/-Blackwell-Inference-Server"
-Issues = "https://github.com/Leslie360/-Blackwell-Inference-Server/issues"
+Homepage = "https://github.com/Leslie360/blackwell-inference-server"
+Repository = "https://github.com/Leslie360/blackwell-inference-server"
+Issues = "https://github.com/Leslie360/blackwell-inference-server/issues"
 
 [project.scripts]
 blackwell-attn-bench = "blackwell_inference.bench.attention_cli:main"

@@ -42,8 +42,8 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
 ### 1. Install
 
 ```bash
-git clone https://github.com/Leslie360/-Blackwell-Inference-Server.git
-cd -- -Blackwell-Inference-Server
+git clone https://github.com/Leslie360/blackwell-inference-server.git
+cd -- blackwell-inference-server
 pip install -e .[asr,server]
 ```
 
