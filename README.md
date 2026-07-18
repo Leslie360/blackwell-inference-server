@@ -66,6 +66,11 @@ Open `http://localhost:8000` for the dashboard.
 curl -X POST http://localhost:8000/v1/audio/transcriptions \
   -F "file=@audio.wav"
 
+# Chat with speculative decoding
+curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{"model":"qwen3-text","messages":[{"role":"user","content":"hello"}],"use_spec":true}'
+
 # Run attention benchmark
 curl -X POST http://localhost:8000/v1/benchmark \
   -H "Content-Type: application/json" \
@@ -82,6 +87,10 @@ curl -X POST http://localhost:8000/v1/benchmark \
 ```bash
 docker compose up --build
 ```
+
+### 5. Read the story
+
+[技术博客：在 RTX 5070 Ti 上自建 OpenAI 兼容推理服务](docs/BLOG.md)
 
 ---
 
