@@ -1,17 +1,26 @@
 # Blackwell Inference Server
 
+[![CI](https://github.com/Leslie360/-Blackwell-Inference-Server/workflows/CI/badge.svg)](https://github.com/Leslie360/-Blackwell-Inference-Server/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![CUDA 13.0](https://img.shields.io/badge/CUDA-13.0-green.svg)](https://developer.nvidia.com/cuda-toolkit)
+
 > OpenAI-compatible inference server optimized for consumer Blackwell GPUs (RTX 5070 Ti, SM120) — custom attention kernels, Qwen3-ASR acceleration, and one-command benchmarks.
 
-## Why this project
+---
+
+## Why this project exists
 
 Consumer Blackwell (SM120) is poorly served by existing inference stacks:
 
 - CUTLASS Blackwell FMHA targets sm100a, not sm120
 - FlashAttention 2.x does not officially support sm120
-- vLLM 0.14.0 pins old torch that breaks on this card
+- vLLM 0.14.0 pins an older torch that breaks on this card
 - WSL2 blocks ncu/nsys kernel profiling
 
 **Blackwell Inference Server** packages working attention kernels, torch.compile recipes, and a FastAPI server so you can run high-performance LLM/ASR inference on a single RTX 5070 Ti.
+
+---
 
 ## Features
 
@@ -27,13 +36,15 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
 - **Attention backends** — SDPA / Triton linear attention / raw CUDA KDA / Mini-Attention SM120
 - **Docker** — one-command deployment
 
+---
+
 ## Quick start
 
 ### 1. Install
 
 ```bash
-git clone https://github.com/yourname/blackwell-inference-kit.git
-cd blackwell-inference-kit
+git clone https://github.com/Leslie360/-Blackwell-Inference-Server.git
+cd -Blackwell-Inference-Server
 pip install -e .[asr,server]
 ```
 
@@ -72,16 +83,18 @@ curl -X POST http://localhost:8000/v1/benchmark \
 docker compose up --build
 ```
 
+---
+
 ## Benchmarks (RTX 5070 Ti)
 
 ### Attention (N=2048, B=1, H=8)
 
-| Backend | Latency | TFLOPS |
-|---------|--------:|-------:|
-| SDPA | 0.109 ms | 78.7 |
-| linear | 0.064 ms | 67.0 |
-| KDA | 2.660 ms | 1.6 |
-| mini | 0.250 ms | 68.7 |
+| Backend | Latency | TFLOPS | Note |
+|---------|--------:|-------:|------|
+| SDPA | 0.109 ms | 78.7 | cuDNN flash attention |
+| linear | 0.064 ms | 67.0 | Triton chunked linear attention |
+| KDA | 2.660 ms | 1.6 | raw CUDA educational kernel |
+| mini | 0.250 ms | 68.7 | SM120 mma.sync kernel |
 
 ### Qwen3-ASR-0.6B
 
@@ -89,6 +102,8 @@ docker compose up --build
 |--------|--------:|-----------:|
 | baseline | 0.671 s | 22.4× realtime |
 | torch.compile | **0.266 s** | **56.6× realtime** |
+
+---
 
 ## Architecture
 
@@ -111,16 +126,33 @@ Dockerfile              # one-command deployment
 docker-compose.yml
 ```
 
+---
+
 ## Performance analysis
 
 `ncu`/`nsys` cannot capture CUDA kernel traces on WSL2 + SM120. All kernel-level evidence uses `torch.profiler`; see `docs/PERFORMANCE.md`.
 
+---
+
 ## Roadmap
 
-- v0.2: GitHub Actions CI, PyPI release, benchmark dashboard
-- v0.3: text LLM support (Qwen3-0.6B/1.7B)
-- v0.4: EAGLE / n-gram speculative decoding
-- v1.0: SGLang/vLLM integration examples, Hugging Face Spaces demo
+- **v0.2** — GitHub Actions CI, PyPI release, benchmark dashboard
+- **v0.3** — text LLM support (Qwen3-0.6B/1.7B)
+- **v0.4** — EAGLE / n-gram speculative decoding
+- **v1.0** — SGLang/vLLM integration examples, Hugging Face Spaces demo
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue or pull request.
+
+1. Fork the repository
+2. Create a feature branch
+3. Run tests: `pytest`
+4. Submit a PR
+
+---
 
 ## License
 
