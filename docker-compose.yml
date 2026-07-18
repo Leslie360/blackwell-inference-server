@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  blackwell-inference:
+    build: .
+    image: blackwell-inference-server:latest
+    container_name: blackwell-inference
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - MINI_ATTENTION_ROOT=/opt/Mini-Attention
+    volumes:
+      - ./models:/models:ro
+      - ./benchmarks:/app/benchmarks
+    ports:
+      - "8000:8000"
+    command:
+      - "--asr-model"
+      - "/models/Qwen3-ASR-0.6B"
+      - "--compile"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8000"
+    restart: unless-stopped

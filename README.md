@@ -1,97 +1,126 @@
-# blackwell-inference-kit
+# Blackwell Inference Server
 
-Inference optimization toolkit for consumer Blackwell GPUs (RTX 5070 Ti, SM120): custom attention kernels, Qwen3-ASR acceleration, and reproducible benchmarks.
+> OpenAI-compatible inference server optimized for consumer Blackwell GPUs (RTX 5070 Ti, SM120) — custom attention kernels, Qwen3-ASR acceleration, and one-command benchmarks.
 
-## What it does
+## Why this project
 
-- **Attention backends**: PyTorch SDPA, Triton linear attention, raw CUDA causal attention (KDA), and optional Mini-Attention SM120 kernel
-- **ASR acceleration**: Qwen3-ASR inference with baseline / torch.compile comparison
-- **Benchmarks**: one-command attention and ASR benchmarks with JSON output
-- **HTTP server**: minimal FastAPI wrapper for Qwen3-ASR
+Consumer Blackwell (SM120) is poorly served by existing inference stacks:
+
+- CUTLASS Blackwell FMHA targets sm100a, not sm120
+- FlashAttention 2.x does not officially support sm120
+- vLLM 0.14.0 pins old torch that breaks on this card
+- WSL2 blocks ncu/nsys kernel profiling
+
+**Blackwell Inference Server** packages working attention kernels, torch.compile recipes, and a FastAPI server so you can run high-performance LLM/ASR inference on a single RTX 5070 Ti.
+
+## Features
+
+- **OpenAI-compatible API**
+  - `POST /v1/audio/transcriptions` — Qwen3-ASR speech-to-text
+  - `POST /v1/chat/completions` — text LLM (placeholder)
+  - `GET /v1/models` — list loaded models
+- **Benchmark API**
+  - `POST /v1/benchmark` — run attention/ASR benchmarks
+  - `GET /v1/profile` — torch.profiler kernel traces
+  - `GET /v1/profiles` — list saved profiles
+- **Web dashboard** — built-in UI for benchmarks and transcription
+- **Attention backends** — SDPA / Triton linear attention / raw CUDA KDA / Mini-Attention SM120
+- **Docker** — one-command deployment
 
 ## Quick start
+
+### 1. Install
 
 ```bash
 git clone https://github.com/yourname/blackwell-inference-kit.git
 cd blackwell-inference-kit
-
-# 1. Install (editable)
 pip install -e .[asr,server]
-
-# 2. Attention benchmark (SDPAs, linear, KDA; mini optional)
-blackwell-attn-bench --backends sdpa,linear,kda --seq-lens 512,1024,2048
-
-# 3. Qwen3-ASR benchmark
-blackwell-asr-bench \
-  --model /path/to/Qwen3-ASR-0.6B \
-  --audio /path/to/audio.wav \
-  --batch-size 1
-
-# 4. Qwen3-ASR with torch.compile
-blackwell-asr-bench \
-  --model /path/to/Qwen3-ASR-0.6B \
-  --audio /path/to/audio.wav \
-  --batch-size 1 --compile
-
-# 5. HTTP server
-blackwell-serve --model /path/to/Qwen3-ASR-0.6B --compile --port 8000
 ```
 
-## Optional: Mini-Attention backend
-
-The `mini` backend uses the open-source [ShlokVFX/Mini-Attention](https://github.com/ShlokVFX/Mini-Attention) SM120 kernel. Clone it and set:
+### 2. Run server
 
 ```bash
-export MINI_ATTENTION_ROOT=/path/to/Mini-Attention
+blackwell-serve \
+  --asr-model /path/to/Qwen3-ASR-0.6B \
+  --compile \
+  --host 0.0.0.0 --port 8000
 ```
 
-Build the extension first following its README, then run:
+Open `http://localhost:8000` for the dashboard.
+
+### 3. Call the API
 
 ```bash
-blackwell-attn-bench --backends sdpa,mini --seq-lens 4096,8192
+# Transcribe audio
+curl -X POST http://localhost:8000/v1/audio/transcriptions \
+  -F "file=@audio.wav"
+
+# Run attention benchmark
+curl -X POST http://localhost:8000/v1/benchmark \
+  -H "Content-Type: application/json" \
+  -d '{"task":"attention","backend":"sdpa","seq_len":2048}'
+
+# Run ASR benchmark
+curl -X POST http://localhost:8000/v1/benchmark \
+  -H "Content-Type: application/json" \
+  -d '{"task":"asr","backend":"compile","model":"/path/to/Qwen3-ASR-0.6B","audio":"/path/to/audio.wav"}'
 ```
 
-## Benchmark results (RTX 5070 Ti)
+### 4. Docker
 
-See `benchmarks/` for raw JSON. Representative numbers:
+```bash
+docker compose up --build
+```
 
-| Backend | N | TFLOPS | Note |
-|---------|---|-------:|------|
-| SDPA | 2048 | 78.7 | cuDNN flash attention |
-| linear | 2048 | 67.0 | Triton chunked linear attention |
-| KDA | 2048 | 1.6 | raw CUDA educational kernel |
-| mini | 2048 | 68.7 | SM120 mma.sync kernel |
+## Benchmarks (RTX 5070 Ti)
 
-Qwen3-ASR-0.6B:
+### Attention (N=2048, B=1, H=8)
+
+| Backend | Latency | TFLOPS |
+|---------|--------:|-------:|
+| SDPA | 0.109 ms | 78.7 |
+| linear | 0.064 ms | 67.0 |
+| KDA | 2.660 ms | 1.6 |
+| mini | 0.250 ms | 68.7 |
+
+### Qwen3-ASR-0.6B
 
 | Config | Latency | Throughput |
 |--------|--------:|-----------:|
 | baseline | 0.671 s | 22.4× realtime |
-| torch.compile | 0.266 s | **56.6× realtime** |
+| torch.compile | **0.266 s** | **56.6× realtime** |
 
-## Requirements
-
-- CUDA 13.0 / PyTorch >= 2.8 (compiled for SM120)
-- `nvcc` from `nvidia/cu13` PyPI package or system CUDA >= 12.9
-- Optional: `qwen-asr`, `modelscope`, `fastapi`, `uvicorn`
-
-## Project layout
+## Architecture
 
 ```
 src/blackwell_inference/
-├── attention/
-│   ├── sdpa backend (torch)
-│   ├── linear/      # Triton linear attention
-│   ├── kda/         # raw CUDA causal attention
-│   └── mini/        # Mini-Attention wrapper
-├── asr/             # Qwen3-ASR wrapper + FastAPI server
-├── bench/           # benchmark runners + CLIs
-├── spec/            # speculative decoding (placeholder)
+├── attention/          # attention backends (sdpa, linear, kda, mini)
+├── asr/                # Qwen3-ASR wrapper
+├── bench/              # benchmark runners + CLIs
+├── serve/              # FastAPI server + dashboard
+│   ├── app.py          # OpenAI-compatible API
+│   ├── models.py       # model registry
+│   ├── schemas.py      # request/response models
+│   └── static/         # web dashboard
+├── spec/               # speculative decoding (placeholder)
 └── utils/
-tests/
-benchmarks/
-docs/
+tests/                  # pytest
+benchmarks/             # JSON results
+docs/                   # design, performance, roadmap
+Dockerfile              # one-command deployment
+docker-compose.yml
 ```
+
+## Performance analysis
+
+`ncu`/`nsys` cannot capture CUDA kernel traces on WSL2 + SM120. All kernel-level evidence uses `torch.profiler`; see `docs/PERFORMANCE.md`.
+
+## Roadmap
+
+- v0.2: GitHub Actions CI, PyPI release, benchmark dashboard
+- v0.3: text LLM support (Qwen3-0.6B/1.7B)
+- v0.4: EAGLE / n-gram speculative decoding
+- v1.0: SGLang/vLLM integration examples, Hugging Face Spaces demo
 
 ## License
 

@@ -41,7 +41,7 @@ Issues = "https://github.com/yourname/blackwell-inference-kit/issues"
 [project.scripts]
 blackwell-attn-bench = "blackwell_inference.bench.attention_cli:main"
 blackwell-asr-bench = "blackwell_inference.bench.asr_cli:main"
-blackwell-serve = "blackwell_inference.asr.server:main"
+blackwell-serve = "blackwell_inference.serve.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

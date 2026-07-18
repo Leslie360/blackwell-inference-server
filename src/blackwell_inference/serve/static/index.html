@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>Blackwell Inference Server</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 960px; margin: 0 auto; padding: 24px; background: #0f172a; color: #e2e8f0; }
+    h1 { color: #38bdf8; }
+    .card { background: #1e293b; border-radius: 12px; padding: 20px; margin: 16px 0; }
+    label { display: block; margin-top: 8px; font-size: 14px; }
+    input, select { width: 100%; padding: 8px; margin-top: 4px; border-radius: 6px; border: 1px solid #334155; background: #0f172a; color: #e2e8f0; }
+    button { margin-top: 12px; padding: 10px 20px; border: none; border-radius: 6px; background: #38bdf8; color: #0f172a; font-weight: 600; cursor: pointer; }
+    button:hover { background: #0ea5e9; }
+    pre { background: #0f172a; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 13px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <h1>Blackwell Inference Server</h1>
+  <p>面向消费级 Blackwell（RTX 5070 Ti, SM120）的 OpenAI 兼容推理服务</p>
+
+  <div class="card">
+    <h2>健康状态</h2>
+    <pre id="health">加载中...</pre>
+  </div>
+
+  <div class="grid">
+    <div class="card">
+      <h2>Attention Benchmark</h2>
+      <label>Backend
+        <select id="attn-backend">
+          <option value="sdpa">sdpa</option>
+          <option value="linear">linear</option>
+          <option value="kda">kda</option>
+          <option value="mini">mini</option>
+        </select>
+      </label>
+      <label>Seq Len <input id="attn-seq" type="number" value="2048"></label>
+      <label>Batch <input id="attn-batch" type="number" value="1"></label>
+      <button onclick="runAttnBench()">Run</button>
+      <pre id="attn-result"></pre>
+    </div>
+
+    <div class="card">
+      <h2>ASR Benchmark</h2>
+      <label>Model Path <input id="asr-model" value="/home/qiaosir/projects_1/qwen3_asr_accel/models/Qwen3-ASR-0.6B"></label>
+      <label>Audio Path <input id="asr-audio" value="/home/qiaosir/projects_1/qwen3_asr_accel/assets/asr_en.wav"></label>
+      <label>Backend
+        <select id="asr-backend">
+          <option value="baseline">baseline</option>
+          <option value="compile">compile</option>
+        </select>
+      </label>
+      <button onclick="runAsrBench()">Run</button>
+      <pre id="asr-result"></pre>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>ASR Transcribe</h2>
+    <input id="audio-file" type="file" accept="audio/*">
+    <button onclick="transcribe()">Transcribe</button>
+    <pre id="transcribe-result"></pre>
+  </div>
+
+  <script>
+    async function health() {
+      const r = await fetch('/health');
+      document.getElementById('health').textContent = JSON.stringify(await r.json(), null, 2);
+    }
+    async function runAttnBench() {
+      const body = {
+        task: 'attention',
+        backend: document.getElementById('attn-backend').value,
+        batch_size: parseInt(document.getElementById('attn-batch').value),
+        seq_len: parseInt(document.getElementById('attn-seq').value),
+      };
+      const r = await fetch('/v1/benchmark', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+      document.getElementById('attn-result').textContent = JSON.stringify(await r.json(), null, 2);
+    }
+    async function runAsrBench() {
+      const body = {
+        task: 'asr',
+        backend: document.getElementById('asr-backend').value,
+        model: document.getElementById('asr-model').value,
+        audio: document.getElementById('asr-audio').value,
+      };
+      const r = await fetch('/v1/benchmark', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+      document.getElementById('asr-result').textContent = JSON.stringify(await r.json(), null, 2);
+    }
+    async function transcribe() {
+      const file = document.getElementById('audio-file').files[0];
+      if (!file) return alert('请选择音频文件');
+      const fd = new FormData();
+      fd.append('file', file);
+      const r = await fetch('/v1/audio/transcriptions', {method: 'POST', body: fd});
+      document.getElementById('transcribe-result').textContent = JSON.stringify(await r.json(), null, 2);
+    }
+    health();
+  </script>
+</body>
+</html>
