@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![CUDA 13.0](https://img.shields.io/badge/CUDA-13.0-green.svg)](https://developer.nvidia.com/cuda-toolkit)
 
-> OpenAI-compatible inference server optimized for consumer Blackwell GPUs (RTX 5070 Ti, SM120) — custom attention kernels, Qwen3-ASR acceleration, and one-command benchmarks.
+> OpenAI-compatible inference server optimized for consumer Blackwell GPUs (RTX 5070 Ti, SM120) — custom attention kernels, Qwen3-ASR acceleration, and reproducible benchmarks.
 
 ---
 
@@ -33,7 +33,7 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
   - `GET /v1/profiles` — list saved profiles
 - **Web dashboard** — built-in UI for benchmarks and transcription
 - **Attention backends** — SDPA / Triton linear attention / raw CUDA KDA / Mini-Attention SM120
-- **Docker** — one-command deployment
+- **Dockerfile** — provided for containerized deployment
 
 ---
 
@@ -43,7 +43,7 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
 
 ```bash
 git clone https://github.com/Leslie360/blackwell-inference-server.git
-cd -- blackwell-inference-server
+cd blackwell-inference-server
 pip install -e .[asr,server]
 ```
 
@@ -133,7 +133,7 @@ src/blackwell_inference/
 tests/                  # pytest
 benchmarks/             # JSON results
 docs/                   # design, performance, roadmap
-Dockerfile              # one-command deployment
+Dockerfile              # containerized deployment
 docker-compose.yml
 ```
 
