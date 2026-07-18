@@ -9,6 +9,23 @@ import torch
 _KERNEL = None
 
 
+def _ensure_nvcc():
+    """Point CUDA_HOME/PATH at the cu13 toolkit shipped with torch."""
+    import os
+    import sys
+
+    import torch
+
+    cu13 = Path(torch.__file__).resolve().parent.parent / "nvidia" / "cu13"
+    if not (cu13 / "bin" / "nvcc").exists():
+        return
+    os.environ["CUDA_HOME"] = str(cu13)
+    os.environ["PATH"] = str(cu13 / "bin") + os.pathsep + os.environ.get("PATH", "")
+    # If cpp_extension was already imported, override its cached CUDA_HOME too.
+    if "torch.utils.cpp_extension" in sys.modules:
+        sys.modules["torch.utils.cpp_extension"].CUDA_HOME = str(cu13)
+
+
 def _load_kernel():
     global _KERNEL
     if _KERNEL is not None:
@@ -18,6 +35,8 @@ def _load_kernel():
         from torch.utils.cpp_extension import load
     except ImportError as e:
         raise RuntimeError("torch.utils.cpp_extension is required for KDA kernel") from e
+
+    _ensure_nvcc()
 
     src = Path(__file__).resolve().parent / "kda_attention.cu"
     build_dir = src.parent / "build"
