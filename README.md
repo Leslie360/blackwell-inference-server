@@ -108,14 +108,14 @@ docker compose up --build
 
 ```mermaid
 graph TD
-    A[Client / Web Dashboard] --> B[FastAPI Server]
-    B --> C[Model Registry]
-    C --> D[Qwen3-ASR]
-    C --> E[Text LLM (planned)]
-    B --> F[Benchmark Runner]
-    F --> G[SDPA / Linear / KDA / Mini-Attention]
-    B --> H[torch.profiler]
-    H --> I[benchmarks/*.json]
+    A["Client / Web Dashboard"] --> B["FastAPI Server"]
+    B --> C["Model Registry"]
+    C --> D["Qwen3-ASR"]
+    C --> E["Text LLM (planned)"]
+    B --> F["Benchmark Runner"]
+    F --> G["SDPA / Linear / KDA / Mini-Attention"]
+    B --> H["torch.profiler"]
+    H --> I["benchmarks/*.json"]
 ```
 
 ```
