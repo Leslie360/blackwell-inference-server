@@ -107,6 +107,18 @@ docker compose up --build
 
 ## Architecture
 
+```mermaid
+graph TD
+    A[Client / Web Dashboard] --> B[FastAPI Server]
+    B --> C[Model Registry]
+    C --> D[Qwen3-ASR]
+    C --> E[Text LLM (planned)]
+    B --> F[Benchmark Runner]
+    F --> G[SDPA / Linear / KDA / Mini-Attention]
+    B --> H[torch.profiler]
+    H --> I[benchmarks/*.json]
+```
+
 ```
 src/blackwell_inference/
 ├── attention/          # attention backends (sdpa, linear, kda, mini)
