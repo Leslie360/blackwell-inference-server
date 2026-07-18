@@ -2,15 +2,14 @@
 
 ## ncu / nsys 状态
 
-在 **WSL2 + RTX 5070 Ti (SM120)** 环境下，`ncu`/`nsys` 无法采集 CUDA kernel trace：
+在本项目开发机（**WSL2 + RTX 5070 Ti, SM120**）上实测：
 
-- `ncu` 未安装（系统无此命令）
-- `nsys profile` 能生成报告，但 `nsys stats` 显示：
-  - `SKIPPED: ... does not contain CUDA kernel data`
-  - `SKIPPED: ... does not contain CUDA trace data`
-  - 只有 OS runtime（`poll`/`read`/`ioctl`）统计
+- `ncu`（Nsight Compute 2025.1.1，位于 `~/miniconda3/envs/LLM/bin/ncu`）启动即报：
+  `ERR_NVGPUCTRPERM - The user does not have permission to access NVIDIA GPU Performance Counters`
+- `nsys`（系统自带 2023.4.4）能生成报告，但 `nsys stats` 显示：
+  `SKIPPED: ... does not contain CUDA kernel data`
 
-因此本项目的 kernel 级性能分析全部依赖 **torch.profiler**（Chrome trace + key averages），这是当前环境下唯一可靠的手段。
+根因：WSL2 默认禁止用户态访问 GPU performance counters，需要 Windows 宿主机修改注册表/驱动设置，或改用原生 Linux。因此本项目在此环境下**统一使用 torch.profiler** 采集 kernel 级 trace；在原生 Linux 或有权限的环境中，可直接替换为 ncu/nsys。
 
 ## 已采集的 profile
 
