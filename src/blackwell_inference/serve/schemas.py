@@ -39,6 +39,9 @@ class ChatCompletionRequest(BaseModel):
     messages: list[ChatMessage]
     max_tokens: int = 256
     temperature: float = 0.0
+    use_spec: bool = False
+    gamma: int = 4
+    ngram: int = 3
 
 
 class ChatCompletionChoice(BaseModel):

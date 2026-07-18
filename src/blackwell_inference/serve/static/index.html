@@ -65,6 +65,15 @@
     <pre id="transcribe-result"></pre>
   </div>
 
+  <div class="card">
+    <h2>LLM Chat</h2>
+    <label>Prompt <input id="chat-prompt" value="The quick brown fox jumps over the lazy dog. The quick brown fox jumps over the lazy dog."></label>
+    <label>Max tokens <input id="chat-max" type="number" value="64"></label>
+    <label><input id="chat-spec" type="checkbox" style="width:auto"> use_spec (n-gram speculative decoding)</label>
+    <button onclick="chat()">Chat</button>
+    <pre id="chat-result"></pre>
+  </div>
+
   <script>
     async function health() {
       const r = await fetch('/health');
@@ -97,6 +106,16 @@
       fd.append('file', file);
       const r = await fetch('/v1/audio/transcriptions', {method: 'POST', body: fd});
       document.getElementById('transcribe-result').textContent = JSON.stringify(await r.json(), null, 2);
+    }
+    async function chat() {
+      const body = {
+        model: 'qwen3-text',
+        messages: [{role: 'user', content: document.getElementById('chat-prompt').value}],
+        max_tokens: parseInt(document.getElementById('chat-max').value),
+        use_spec: document.getElementById('chat-spec').checked,
+      };
+      const r = await fetch('/v1/chat/completions', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
+      document.getElementById('chat-result').textContent = JSON.stringify(await r.json(), null, 2);
     }
     health();
   </script>

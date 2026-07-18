@@ -72,8 +72,16 @@ async def transcribe(file: UploadFile = File(...), model: str = "qwen3-asr", lan
 
 @app.post("/v1/chat/completions", response_model=ChatCompletionResponse)
 async def chat_completions(request: ChatCompletionRequest):
-    # Placeholder for future text LLM; return a deterministic response for now.
-    content = "Text LLM endpoint is not enabled in this build. Use /v1/audio/transcriptions for ASR."
+    if registry.llm is None:
+        raise HTTPException(status_code=503, detail="LLM model not loaded")
+    prompt = "\n".join(f"{m.role}: {m.content}" for m in request.messages)
+    text, stats = registry.generate_text(
+        prompt,
+        max_new_tokens=request.max_tokens,
+        use_spec=request.use_spec,
+        gamma=request.gamma,
+        ngram=request.ngram,
+    )
     return ChatCompletionResponse(
         id="chatcmpl-blackwell",
         created=int(time.time()),
@@ -81,10 +89,14 @@ async def chat_completions(request: ChatCompletionRequest):
         choices=[
             ChatCompletionChoice(
                 index=0,
-                message=ChatMessage(role="assistant", content=content),
+                message=ChatMessage(role="assistant", content=text),
             )
         ],
-        usage={"prompt_tokens": 0, "completion_tokens": 0, "total_tokens": 0},
+        usage={
+            "prompt_tokens": 0,
+            "completion_tokens": stats["tokens"],
+            "total_tokens": stats["tokens"],
+        },
     )
 
 

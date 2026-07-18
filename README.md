@@ -25,7 +25,7 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
 
 - **OpenAI-compatible API**
   - `POST /v1/audio/transcriptions` — Qwen3-ASR speech-to-text
-  - `POST /v1/chat/completions` — text LLM (placeholder)
+  - `POST /v1/chat/completions` — text LLM with optional n-gram speculative decoding
   - `GET /v1/models` — list loaded models
 - **Benchmark API**
   - `POST /v1/benchmark` — run attention/ASR benchmarks
@@ -52,6 +52,7 @@ pip install -e .[asr,server]
 ```bash
 blackwell-serve \
   --asr-model /path/to/Qwen3-ASR-0.6B \
+  --llm-model /path/to/Qwen3-0.6B \
   --compile \
   --host 0.0.0.0 --port 8000
 ```

@@ -46,18 +46,25 @@ Transcribes an audio file with Qwen3-ASR.
 
 ### `POST /v1/chat/completions`
 
-Placeholder for text LLM support.
+Generates text with the loaded LLM. Supports optional n-gram speculative decoding.
 
 **Request**
 
 ```json
 {
-  "model": "qwen3-0.6b",
+  "model": "qwen3-text",
   "messages": [{"role":"user","content":"hello"}],
   "max_tokens": 256,
-  "temperature": 0.0
+  "temperature": 0.0,
+  "use_spec": false,
+  "gamma": 4,
+  "ngram": 3
 }
 ```
+
+- `use_spec`: enable n-gram self-speculative decoding
+- `gamma`: draft tokens per step
+- `ngram`: n-gram size for draft lookup
 
 **Response**
 
@@ -66,9 +73,9 @@ Placeholder for text LLM support.
   "id": "chatcmpl-blackwell",
   "object": "chat.completion",
   "created": 1720000000,
-  "model": "qwen3-0.6b",
+  "model": "qwen3-text",
   "choices": [{"index":0,"message":{"role":"assistant","content":"..."},"finish_reason":"stop"}],
-  "usage": {"prompt_tokens":0,"completion_tokens":0,"total_tokens":0}
+  "usage": {"prompt_tokens":0,"completion_tokens":64,"total_tokens":64}
 }
 ```
 
