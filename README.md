@@ -33,7 +33,8 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
   - `GET /v1/profiles` — list saved profiles
 - **Web dashboard** — built-in UI for benchmarks and transcription
 - **Attention backends** — SDPA / Triton linear attention / raw CUDA KDA / Mini-Attention SM120
-- **LoRA inference** — adapter loading, weight merge, fused inference with correctness tests
+- **blackwell-ops** — custom Triton operator library: RMSNorm, RoPE, INT8 GEMM (with correctness tests and benchmarks)
+- **LoRA inference** — adapter loading, weight merge, delta-fused multi-LoRA serving
 - **Dockerfile** — provided for containerized deployment
 
 ---
@@ -121,6 +122,16 @@ docker compose up --build
 | General creative prompt | 83.4 | 78.2 | 0.94× | 4.2% |
 
 N-gram self-speculation works when output is repetitive/structured; it adds negligible overhead otherwise.
+
+### blackwell-ops (Triton, vs PyTorch reference)
+
+| Operator | Shape | Speedup |
+|----------|-------|--------:|
+| RMSNorm | 8192×4096 | **8.50×** |
+| RoPE | 1×32×4096×128 | **7.12×** |
+| INT8 weight-only GEMM | 8192×4096×14336 | **0.49×** (no int8 tensor core) |
+
+INT8 GEMM is slower than cuBLAS FP16 because our kernel does not use SM120 int8 tensor cores — a negative result that explains why torchao W8A16 fails on this card.
 
 ### LoRA inference (Qwen3-0.6B, r=16 / r=128)
 

@@ -12,6 +12,7 @@
 - [x] LoRA adapter loading / merge / fused inference with correctness + benchmark
 - [x] multi-LoRA serving benchmark (fused overhead ~33%)
 - [x] **delta-fused LoRA optimization** (precompute ΔW=B@A, eliminate fused overhead)
+- [x] **blackwell-ops operator library**: RMSNorm, RoPE, INT8 GEMM (correctness + benchmark)
 - [ ] README + docs complete
 
 ## v0.2
