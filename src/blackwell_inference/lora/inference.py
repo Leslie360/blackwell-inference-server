@@ -46,8 +46,14 @@ class LoRAModel:
 
     def load_merged(self):
         if self._merged is None:
-            peft_model = self.load_peft()
-            self._merged = peft_model.merge_and_unload()
+            # Use a separate base copy so merge_and_unload does not contaminate the fused path.
+            from peft import PeftModel
+
+            base_copy = AutoModelForCausalLM.from_pretrained(
+                self.base_model_path, torch_dtype=torch.float16, device_map=self.device
+            )
+            peft_copy = PeftModel.from_pretrained(base_copy, self.adapter_path)
+            self._merged = peft_copy.merge_and_unload()
         return self._merged
 
     def generate(self, prompt: str, mode: str = "base", max_new_tokens: int = 64) -> str:

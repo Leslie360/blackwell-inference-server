@@ -10,6 +10,7 @@
 - [x] pytest correctness tests
 - [x] n-gram speculative decoding with correctness + benchmark
 - [x] LoRA adapter loading / merge / fused inference with correctness + benchmark
+- [x] multi-LoRA serving benchmark (fused overhead ~33%)
 - [ ] README + docs complete
 
 ## v0.2

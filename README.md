@@ -122,15 +122,20 @@ docker compose up --build
 
 N-gram self-speculation works when output is repetitive/structured; it adds negligible overhead otherwise.
 
-### LoRA inference (Qwen3-0.6B, r=16)
+### LoRA inference (Qwen3-0.6B, r=16 / r=128)
 
-| Mode | Latency | Throughput | Memory |
-|------|--------:|-----------:|-------:|
-| base | 0.816 s | 78.4 tok/s | 1.50 GB |
-| merged | 0.818 s | 78.2 tok/s | 1.24 GB |
-| fused | 0.811 s | 78.9 tok/s | 1.22 GB |
+| Adapter | Mode | Latency | Throughput | vs base |
+|---------|------|--------:|-----------:|--------:|
+| r=16 | base | 0.815 s | 78.5 tok/s | 1.00× |
+| r=16 | merged | 0.811 s | 78.9 tok/s | 1.01× |
+| r=16 | fused | 1.216 s | 52.6 tok/s | **0.67×** |
+| r=128 | base | 0.827 s | 77.4 tok/s | 1.00× |
+| r=128 | merged | 0.823 s | 77.8 tok/s | 1.01× |
+| r=128 | fused | 1.191 s | 53.8 tok/s | **0.69×** |
 
-LoRA merge does not hurt performance; fused inference overhead is negligible for small adapters. Correctness test verifies merged and fused produce identical output.
+**Key finding**: merging LoRA into base weights is free; fused (no-merge) inference is ~33% slower on Qwen3-0.6B due to extra LoRA GEMMs. Multi-LoRA serving trades this overhead for memory savings (one base + N small adapters vs N full models).
+
+**Bug story**: an earlier version reported fused ≈ base because `merge_and_unload` mutated the shared base model, contaminating the fused path. Fixed by merging into a separate copy.
 
 ---
 

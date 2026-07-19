@@ -34,7 +34,11 @@ A：系统评估了 torchao INT8 weight-only / W8A8 / FP8，在 SM120 上都因 
 
 A：WSL2 默认禁止用户态访问 GPU performance counters（`ERR_NVGPUCTRPERM`），所以 kernel 级分析用 torch.profiler。在原生 Linux 下可以直接换 ncu/nsys。
 
-### Q8：如果让你继续做，下一步是什么？
+### Q9：LoRA merge 和 fused 哪个好？
+
+A：merge 好。实测 Qwen3-0.6B 上 merged 和 base 几乎一样快（78.9 vs 78.5 tok/s），fused 慢 33%（52.6 tok/s），因为每次 forward 都要额外算 LoRA 的 A/B 矩阵。多 LoRA serving 为了省显存才用 fused。我一开始还踩过一个坑：`merge_and_unload` 会原地改 base model，导致 fused 被污染，显示和 base 一样快，后来用独立副本 merge 才测出真实差距。
+
+### Q10：如果让你继续做，下一步是什么？
 
 A：接 EAGLE 投机解码（用一个小 draft model 替代 n-gram，通用文本也能加速）；支持更多模型；做 Hugging Face Spaces 在线 demo。
 

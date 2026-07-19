@@ -31,9 +31,21 @@ Qwen3-ASR uses a `thinker` decoder + `audio_tower`. `torch.compile` on these two
 - loading PEFT LoRA adapters for Qwen3-0.6B
 - weight merge (`merge_and_unload`) vs fused inference (no merge)
 - correctness test (merged and fused produce identical output)
-- benchmark CLI (`blackwell-lora-bench`)
+- benchmark CLI (`blackwell-lora-bench`) and multi-LoRA CLI (`blackwell-multi-lora-bench`)
 
-On Qwen3-0.6B with r=16, base/merged/fused all run at ~78 tok/s; LoRA overhead is negligible.
+**Corrected findings (after fixing a contamination bug)**:
+
+| Mode | r=16 tok/s | r=128 tok/s |
+|------|-----------:|------------:|
+| base | 78.5 | 77.4 |
+| merged | 78.9 | 77.8 |
+| fused | 52.6 | 53.8 |
+
+- merged ≈ base：LoRA 合权不伤性能
+- fused 慢 ~33%：额外 LoRA GEMM 开销
+- 多 LoRA serving 用 fused 换显存节省
+
+**Bug**: 早期版本 fused 显示和 base 一样快，是因为 `merge_and_unload` 原地修改了共享 base model，污染了 fused 路径。修复方法：merge 到独立副本。
 
 ## Speculative decoding
 
