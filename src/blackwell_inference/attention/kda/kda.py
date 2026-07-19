@@ -34,7 +34,9 @@ def _load_kernel():
     try:
         from torch.utils.cpp_extension import load
     except ImportError as e:
-        raise RuntimeError("torch.utils.cpp_extension is required for KDA kernel") from e
+        raise RuntimeError(
+            "torch.utils.cpp_extension is required for KDA kernel"
+        ) from e
 
     _ensure_nvcc()
 

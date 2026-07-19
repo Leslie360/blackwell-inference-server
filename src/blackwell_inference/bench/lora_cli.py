@@ -9,7 +9,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--base-model", required=True)
     parser.add_argument("--adapter", required=True)
-    parser.add_argument("--prompt", default="The quick brown fox jumps over the lazy dog. " * 10)
+    parser.add_argument(
+        "--prompt", default="The quick brown fox jumps over the lazy dog. " * 10
+    )
     parser.add_argument("--max-new-tokens", type=int, default=64)
     parser.add_argument("--repeats", type=int, default=5)
     args = parser.parse_args()
@@ -23,7 +25,9 @@ def main():
     )
 
     for r in results:
-        print(f"{r.mode:8s} {r.latency_s:.3f}s  {r.tokens_per_s:6.1f} tok/s  {r.memory_gb:.2f} GB")
+        print(
+            f"{r.mode:8s} {r.latency_s:.3f}s  {r.tokens_per_s:6.1f} tok/s  {r.memory_gb:.2f} GB"
+        )
 
 
 if __name__ == "__main__":

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import math
-import sys
 from pathlib import Path
 
 import torch
@@ -13,7 +12,13 @@ from torch.profiler import ProfilerActivity, profile
 from ..attention import forward as attention_forward
 
 
-def profile_attention(backend: str, batch: int = 1, heads: int = 8, seq_len: int = 1024, head_dim: int | None = None) -> dict:
+def profile_attention(
+    backend: str,
+    batch: int = 1,
+    heads: int = 8,
+    seq_len: int = 1024,
+    head_dim: int | None = None,
+) -> dict:
     if head_dim is None:
         head_dim = 128 if backend == "mini" else 64
     if backend in ("kda", "linear"):
@@ -21,8 +26,12 @@ def profile_attention(backend: str, batch: int = 1, heads: int = 8, seq_len: int
     else:
         causal = False
 
-    q = torch.randn(batch, heads, seq_len, head_dim, device="cuda", dtype=torch.float16) / math.sqrt(head_dim)
-    k = torch.randn(batch, heads, seq_len, head_dim, device="cuda", dtype=torch.float16) / math.sqrt(head_dim)
+    q = torch.randn(
+        batch, heads, seq_len, head_dim, device="cuda", dtype=torch.float16
+    ) / math.sqrt(head_dim)
+    k = torch.randn(
+        batch, heads, seq_len, head_dim, device="cuda", dtype=torch.float16
+    ) / math.sqrt(head_dim)
     v = torch.randn(batch, heads, seq_len, head_dim, device="cuda", dtype=torch.float16)
 
     attention_forward(backend, q, k, v, causal=causal)  # warmup
@@ -41,12 +50,14 @@ def profile_attention(backend: str, batch: int = 1, heads: int = 8, seq_len: int
     rows = []
     for evt in prof.key_averages():
         if evt.self_device_time_total > 0:
-            rows.append({
-                "name": evt.key[:120],
-                "calls": evt.count,
-                "self_cuda_us": evt.self_device_time_total,
-                "total_cuda_us": evt.device_time_total,
-            })
+            rows.append(
+                {
+                    "name": evt.key[:120],
+                    "calls": evt.count,
+                    "self_cuda_us": evt.self_device_time_total,
+                    "total_cuda_us": evt.device_time_total,
+                }
+            )
     rows.sort(key=lambda r: -r["self_cuda_us"])
     summary = {
         "backend": backend,
@@ -73,6 +84,8 @@ if __name__ == "__main__":
     parser.add_argument("--seq-len", type=int, default=1024)
     parser.add_argument("--head-dim", type=int, default=None)
     args = parser.parse_args()
-    result = profile_attention(args.backend, args.batch, args.heads, args.seq_len, args.head_dim)
+    result = profile_attention(
+        args.backend, args.batch, args.heads, args.seq_len, args.head_dim
+    )
     print(result["trace"])
     print(result["summary"])

@@ -12,13 +12,22 @@ import torch
 
 ROOT = Path(__file__).resolve().parent.parent
 MINI_ROOT = ROOT / "mini_attention"
-MINI_SO = MINI_ROOT / "kernels" / "flash_attn" / "cuda" / "sm_120" / "build" / "sm120" / "sm120.so"
+MINI_SO = (
+    MINI_ROOT
+    / "kernels"
+    / "flash_attn"
+    / "cuda"
+    / "sm_120"
+    / "build"
+    / "sm120"
+    / "sm120.so"
+)
 MINI_PY = MINI_ROOT / "kernels" / "flash_attn" / "cuda" / "sm_120" / "py"
 
 if str(MINI_PY) not in sys.path:
     sys.path.insert(0, str(MINI_PY))
 
-from flash_helpers.kernel_configs import DType, FlashForwardKernelConfig
+from flash_helpers.kernel_configs import DType, FlashForwardKernelConfig  # noqa: E402
 
 
 def _load_ext():

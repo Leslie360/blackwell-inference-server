@@ -41,11 +41,23 @@ import triton.language as tl
 )
 @triton.jit
 def _chunk_states_kernel(
-    K_ptr, V_ptr, S_ptr, LOGG_ptr, GSUM_ptr,
-    stride_kb, stride_kh, stride_kn, stride_kd,
-    stride_vb, stride_vh, stride_vn, stride_vd,
-    H_KV, N,
-    D_K: tl.constexpr, D_V: tl.constexpr,
+    K_ptr,
+    V_ptr,
+    S_ptr,
+    LOGG_ptr,
+    GSUM_ptr,
+    stride_kb,
+    stride_kh,
+    stride_kn,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vn,
+    stride_vd,
+    H_KV,
+    N,
+    D_K: tl.constexpr,
+    D_V: tl.constexpr,
     BLOCK_C: tl.constexpr,
     GATED: tl.constexpr,
 ):
@@ -60,10 +72,20 @@ def _chunk_states_kernel(
     b = pid_bh // H_KV
     h = pid_bh % H_KV
 
-    k_ptrs = (K_ptr + b * stride_kb + h * stride_kh +
-              offs_c[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
-    v_ptrs = (V_ptr + b * stride_vb + h * stride_vh +
-              offs_c[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
+    k_ptrs = (
+        K_ptr
+        + b * stride_kb
+        + h * stride_kh
+        + offs_c[:, None] * stride_kn
+        + offs_dk[None, :] * stride_kd
+    )
+    v_ptrs = (
+        V_ptr
+        + b * stride_vb
+        + h * stride_vh
+        + offs_c[:, None] * stride_vn
+        + offs_dv[None, :] * stride_vd
+    )
     k = tl.load(k_ptrs, mask=mask_c[:, None], other=0.0)
     v = tl.load(v_ptrs, mask=mask_c[:, None], other=0.0)
 
@@ -77,9 +99,13 @@ def _chunk_states_kernel(
 
     # S_c [D_K, D_V] fp32
     s = tl.dot(tl.trans(k), v)
-    s_ptrs = (S_ptr + pid_bh * (tl.num_programs(1) * D_K * D_V) +
-              pid_c * (D_K * D_V) +
-              offs_dk[:, None] * D_V + offs_dv[None, :])
+    s_ptrs = (
+        S_ptr
+        + pid_bh * (tl.num_programs(1) * D_K * D_V)
+        + pid_c * (D_K * D_V)
+        + offs_dk[:, None] * D_V
+        + offs_dv[None, :]
+    )
     tl.store(s_ptrs, s)
 
 
@@ -89,9 +115,12 @@ def _chunk_states_kernel(
 # ---------------------------------------------------------------------------
 @triton.jit
 def _state_scan_kernel(
-    S_ptr, H_ptr, GSUM_ptr,
+    S_ptr,
+    H_ptr,
+    GSUM_ptr,
     NC,
-    D_K: tl.constexpr, D_V: tl.constexpr,
+    D_K: tl.constexpr,
+    D_V: tl.constexpr,
     BLOCK_S: tl.constexpr,
     GATED: tl.constexpr,
 ):
@@ -131,13 +160,34 @@ def _state_scan_kernel(
 )
 @triton.jit
 def _chunk_fwd_o_kernel(
-    Q_ptr, K_ptr, V_ptr, H_ptr, O_ptr, LOGG_ptr,
-    stride_qb, stride_qh, stride_qn, stride_qd,
-    stride_kb, stride_kh, stride_kn, stride_kd,
-    stride_vb, stride_vh, stride_vn, stride_vd,
-    stride_ob, stride_oh, stride_on, stride_od,
-    H_Q, GROUP, N, NC,
-    D_K: tl.constexpr, D_V: tl.constexpr,
+    Q_ptr,
+    K_ptr,
+    V_ptr,
+    H_ptr,
+    O_ptr,
+    LOGG_ptr,
+    stride_qb,
+    stride_qh,
+    stride_qn,
+    stride_qd,
+    stride_kb,
+    stride_kh,
+    stride_kn,
+    stride_kd,
+    stride_vb,
+    stride_vh,
+    stride_vn,
+    stride_vd,
+    stride_ob,
+    stride_oh,
+    stride_on,
+    stride_od,
+    H_Q,
+    GROUP,
+    N,
+    NC,
+    D_K: tl.constexpr,
+    D_V: tl.constexpr,
     BLOCK_C: tl.constexpr,
     GATED: tl.constexpr,
 ):
@@ -153,12 +203,27 @@ def _chunk_fwd_o_kernel(
     offs_dv = tl.arange(0, D_V)
     mask_c = offs_c < N
 
-    q_ptrs = (Q_ptr + b * stride_qb + h_q * stride_qh +
-              offs_c[:, None] * stride_qn + offs_dk[None, :] * stride_qd)
-    k_ptrs = (K_ptr + b * stride_kb + h_kv * stride_kh +
-              offs_c[:, None] * stride_kn + offs_dk[None, :] * stride_kd)
-    v_ptrs = (V_ptr + b * stride_vb + h_kv * stride_vh +
-              offs_c[:, None] * stride_vn + offs_dv[None, :] * stride_vd)
+    q_ptrs = (
+        Q_ptr
+        + b * stride_qb
+        + h_q * stride_qh
+        + offs_c[:, None] * stride_qn
+        + offs_dk[None, :] * stride_qd
+    )
+    k_ptrs = (
+        K_ptr
+        + b * stride_kb
+        + h_kv * stride_kh
+        + offs_c[:, None] * stride_kn
+        + offs_dk[None, :] * stride_kd
+    )
+    v_ptrs = (
+        V_ptr
+        + b * stride_vb
+        + h_kv * stride_vh
+        + offs_c[:, None] * stride_vn
+        + offs_dv[None, :] * stride_vd
+    )
     q = tl.load(q_ptrs, mask=mask_c[:, None], other=0.0)
     k = tl.load(k_ptrs, mask=mask_c[:, None], other=0.0)
     v = tl.load(v_ptrs, mask=mask_c[:, None], other=0.0)
@@ -167,17 +232,22 @@ def _chunk_fwd_o_kernel(
     a = tl.dot(q, tl.trans(k))
     causal = tl.arange(0, BLOCK_C)[:, None] >= tl.arange(0, BLOCK_C)[None, :]
     if GATED:
-        log_g = tl.load(LOGG_ptr + (b * (H_Q // GROUP) + h_kv) * N + offs_c,
-                        mask=mask_c, other=0.0)
+        log_g = tl.load(
+            LOGG_ptr + (b * (H_Q // GROUP) + h_kv) * N + offs_c, mask=mask_c, other=0.0
+        )
         lg = tl.cumsum(log_g, 0)
         a = a * tl.exp(lg[:, None] - lg[None, :])
     a = tl.where(causal, a, 0.0)
     o = tl.dot(a, v.to(tl.float32), input_precision="tf32")
 
     # inter-chunk: O_i += (q_i * decay(chunk_start->i)) @ H_c
-    h_ptrs = (H_ptr + (b * (H_Q // GROUP) + h_kv) * (NC * D_K * D_V) +
-              pid_c * (D_K * D_V) +
-              offs_dk[:, None] * D_V + offs_dv[None, :])
+    h_ptrs = (
+        H_ptr
+        + (b * (H_Q // GROUP) + h_kv) * (NC * D_K * D_V)
+        + pid_c * (D_K * D_V)
+        + offs_dk[:, None] * D_V
+        + offs_dv[None, :]
+    )
     h = tl.load(h_ptrs)
     if GATED:
         q2 = q.to(tl.float32) * tl.exp(lg)[:, None]
@@ -185,14 +255,23 @@ def _chunk_fwd_o_kernel(
         q2 = q.to(tl.float32)
     o += tl.dot(q2, h, input_precision="tf32")
 
-    o_ptrs = (O_ptr + b * stride_ob + h_q * stride_oh +
-              offs_c[:, None] * stride_on + offs_dv[None, :] * stride_od)
+    o_ptrs = (
+        O_ptr
+        + b * stride_ob
+        + h_q * stride_oh
+        + offs_c[:, None] * stride_on
+        + offs_dv[None, :] * stride_od
+    )
     tl.store(o_ptrs, o.to(O_ptr.dtype.element_ty), mask=mask_c[:, None])
 
 
-def linear_attention_chunked(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
-                             log_g: torch.Tensor | None = None,
-                             chunk_size: int = 64) -> torch.Tensor:
+def linear_attention_chunked(
+    q: torch.Tensor,
+    k: torch.Tensor,
+    v: torch.Tensor,
+    log_g: torch.Tensor | None = None,
+    chunk_size: int = 64,
+) -> torch.Tensor:
     """
     q:     [B, H_Q, N, D_K]  bf16/fp16
     k, v:  [B, H_KV, N, D]   (H_Q % H_KV == 0, GQA via head grouping)
@@ -220,25 +299,68 @@ def linear_attention_chunked(q: torch.Tensor, k: torch.Tensor, v: torch.Tensor,
         gsums = states  # unused dummy
 
     _chunk_states_kernel[(B * H_KV, NC)](
-        k, v, states, log_g if gated else k, gsums,
-        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        H_KV, N,
-        D_K=D_K, D_V=D_V, BLOCK_C=chunk_size, GATED=gated,
+        k,
+        v,
+        states,
+        log_g if gated else k,
+        gsums,
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        H_KV,
+        N,
+        D_K=D_K,
+        D_V=D_V,
+        BLOCK_C=chunk_size,
+        GATED=gated,
     )
     BLOCK_S = 16
     scan_grid = (B * H_KV, (D_K // BLOCK_S) * (D_V // BLOCK_S))
     _state_scan_kernel[scan_grid](
-        states, hstates, gsums,
-        NC, D_K=D_K, D_V=D_V, BLOCK_S=BLOCK_S, GATED=gated,
+        states,
+        hstates,
+        gsums,
+        NC,
+        D_K=D_K,
+        D_V=D_V,
+        BLOCK_S=BLOCK_S,
+        GATED=gated,
     )
     _chunk_fwd_o_kernel[(B * H_Q, NC)](
-        q, k, v, hstates, o, log_g if gated else q,
-        q.stride(0), q.stride(1), q.stride(2), q.stride(3),
-        k.stride(0), k.stride(1), k.stride(2), k.stride(3),
-        v.stride(0), v.stride(1), v.stride(2), v.stride(3),
-        o.stride(0), o.stride(1), o.stride(2), o.stride(3),
-        H_Q, group, N, NC,
-        D_K=D_K, D_V=D_V, BLOCK_C=chunk_size, GATED=gated,
+        q,
+        k,
+        v,
+        hstates,
+        o,
+        log_g if gated else q,
+        q.stride(0),
+        q.stride(1),
+        q.stride(2),
+        q.stride(3),
+        k.stride(0),
+        k.stride(1),
+        k.stride(2),
+        k.stride(3),
+        v.stride(0),
+        v.stride(1),
+        v.stride(2),
+        v.stride(3),
+        o.stride(0),
+        o.stride(1),
+        o.stride(2),
+        o.stride(3),
+        H_Q,
+        group,
+        N,
+        NC,
+        D_K=D_K,
+        D_V=D_V,
+        BLOCK_C=chunk_size,
+        GATED=gated,
     )
     return o

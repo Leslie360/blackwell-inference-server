@@ -22,7 +22,9 @@ def extract_lora_delta(peft_model) -> dict[str, torch.Tensor]:
     return deltas
 
 
-def apply_lora_delta(model, deltas: dict[str, torch.Tensor], adapter_name: str = "default"):
+def apply_lora_delta(
+    model, deltas: dict[str, torch.Tensor], adapter_name: str = "default"
+):
     """Apply precomputed LoRA delta weights to the base model in-place.
 
     Replaces each LoRA Linear with an equivalent standard Linear whose weight is
@@ -80,5 +82,9 @@ class DeltaLoRAModel:
             self.prepare_delta()
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         with torch.no_grad():
-            out = self.base.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
-        return self.tokenizer.decode(out[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+            out = self.base.generate(
+                **inputs, max_new_tokens=max_new_tokens, do_sample=False
+            )
+        return self.tokenizer.decode(
+            out[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True
+        )

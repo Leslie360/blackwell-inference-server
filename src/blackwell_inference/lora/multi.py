@@ -32,7 +32,9 @@ class MultiLoRAModel:
         from peft import PeftModel
 
         if self._peft is None:
-            self._peft = PeftModel.from_pretrained(self.base, adapter_path, adapter_name=name)
+            self._peft = PeftModel.from_pretrained(
+                self.base, adapter_path, adapter_name=name
+            )
         else:
             self._peft.load_adapter(adapter_path, adapter_name=name)
 
@@ -43,7 +45,9 @@ class MultiLoRAModel:
             self._peft.set_adapter(name)
             self._current_adapter = name
 
-    def generate(self, prompt: str, adapter: str | None = None, max_new_tokens: int = 64) -> str:
+    def generate(
+        self, prompt: str, adapter: str | None = None, max_new_tokens: int = 64
+    ) -> str:
         if adapter is None:
             model = self.base
         else:
@@ -52,8 +56,12 @@ class MultiLoRAModel:
 
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         with torch.no_grad():
-            out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
-        return self.tokenizer.decode(out[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+            out = model.generate(
+                **inputs, max_new_tokens=max_new_tokens, do_sample=False
+            )
+        return self.tokenizer.decode(
+            out[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True
+        )
 
 
 def benchmark_multi_lora(
@@ -78,7 +86,11 @@ def benchmark_multi_lora(
 
     # baseline
     t = _time(model.generate, prompt, adapter=None, max_new_tokens=max_new_tokens)
-    results.append(MultiLoRABenchResult("base", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9))
+    results.append(
+        MultiLoRABenchResult(
+            "base", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9
+        )
+    )
     torch.cuda.reset_peak_memory_stats()
 
     # each adapter
@@ -86,7 +98,12 @@ def benchmark_multi_lora(
         model.load_adapter(name, path)
         t = _time(model.generate, prompt, adapter=name, max_new_tokens=max_new_tokens)
         results.append(
-            MultiLoRABenchResult(f"adapter:{name}", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9)
+            MultiLoRABenchResult(
+                f"adapter:{name}",
+                t,
+                max_new_tokens / t,
+                torch.cuda.max_memory_allocated() / 1e9,
+            )
         )
         torch.cuda.reset_peak_memory_stats()
 
@@ -100,7 +117,12 @@ def benchmark_multi_lora(
 
         t = _time(_switch) / 2
         results.append(
-            MultiLoRABenchResult("switching", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9)
+            MultiLoRABenchResult(
+                "switching",
+                t,
+                max_new_tokens / t,
+                torch.cuda.max_memory_allocated() / 1e9,
+            )
         )
 
     return results

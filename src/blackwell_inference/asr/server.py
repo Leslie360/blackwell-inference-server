@@ -9,8 +9,6 @@ import tempfile
 import torch
 from fastapi import FastAPI, File, UploadFile
 
-from ..asr.qwen3_asr import benchmark_qwen3_asr
-
 app = FastAPI(title="blackwell-inference-kit ASR")
 
 _model = None
@@ -34,9 +32,13 @@ def _load_model(model_path: str, compile: bool):
     )
     if compile:
         hf_model = _model.model
-        hf_model.thinker.forward = torch.compile(hf_model.thinker.forward, mode="max-autotune-no-cudagraphs", dynamic=True)
+        hf_model.thinker.forward = torch.compile(
+            hf_model.thinker.forward, mode="max-autotune-no-cudagraphs", dynamic=True
+        )
         hf_model.thinker.audio_tower.forward = torch.compile(
-            hf_model.thinker.audio_tower.forward, mode="max-autotune-no-cudagraphs", dynamic=True
+            hf_model.thinker.audio_tower.forward,
+            mode="max-autotune-no-cudagraphs",
+            dynamic=True,
         )
     _compile = compile
     return _model
@@ -48,7 +50,9 @@ async def transcribe(file: UploadFile = File(...)):
         tmp.write(await file.read())
         tmp_path = tmp.name
     try:
-        results = _model.transcribe(audio=tmp_path, language=None, return_time_stamps=False)
+        results = _model.transcribe(
+            audio=tmp_path, language=None, return_time_stamps=False
+        )
         return {"text": results[0].text, "compile": _compile}
     finally:
         os.unlink(tmp_path)

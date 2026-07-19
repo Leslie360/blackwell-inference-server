@@ -12,7 +12,12 @@ from pathlib import Path
 
 import torch
 
-_DEFAULT_ROOT = Path(os.environ.get("MINI_ATTENTION_ROOT", "/home/qiaosir/projects_1/kda_cuda_rtx5070ti/mini_attention"))
+_DEFAULT_ROOT = Path(
+    os.environ.get(
+        "MINI_ATTENTION_ROOT",
+        "/home/qiaosir/projects_1/kda_cuda_rtx5070ti/mini_attention",
+    )
+)
 _ext = None
 _cfg = None
 
@@ -22,7 +27,16 @@ def _load():
     if _ext is not None:
         return _ext, _cfg
 
-    so_path = _DEFAULT_ROOT / "kernels" / "flash_attn" / "cuda" / "sm_120" / "build" / "sm120" / "sm120.so"
+    so_path = (
+        _DEFAULT_ROOT
+        / "kernels"
+        / "flash_attn"
+        / "cuda"
+        / "sm_120"
+        / "build"
+        / "sm120"
+        / "sm120.so"
+    )
     py_dir = _DEFAULT_ROOT / "kernels" / "flash_attn" / "cuda" / "sm_120" / "py"
     if not so_path.exists():
         raise RuntimeError(
@@ -41,7 +55,9 @@ def _load():
     spec.loader.exec_module(mod)
 
     _ext = mod
-    _cfg = FlashForwardKernelConfig(DType.FP16, 128, 64, 64, 4, True, True, True, 0, 2, 2, True, True)
+    _cfg = FlashForwardKernelConfig(
+        DType.FP16, 128, 64, 64, 4, True, True, True, 0, 2, 2, True, True
+    )
     return _ext, _cfg
 
 

@@ -28,7 +28,9 @@ class ModelRegistry:
     llm: LLMModelHandle | None = None
     loaded: dict[str, dict[str, Any]] = field(default_factory=dict)
 
-    def load_asr(self, model_path: str, compile: bool = False, attention_backend: str = "sdpa") -> ASRModelHandle:
+    def load_asr(
+        self, model_path: str, compile: bool = False, attention_backend: str = "sdpa"
+    ) -> ASRModelHandle:
         if self.asr is not None:
             return self.asr
         try:
@@ -45,12 +47,18 @@ class ModelRegistry:
         if compile:
             hf_model = model.model
             hf_model.thinker.forward = torch.compile(
-                hf_model.thinker.forward, mode="max-autotune-no-cudagraphs", dynamic=True
+                hf_model.thinker.forward,
+                mode="max-autotune-no-cudagraphs",
+                dynamic=True,
             )
             hf_model.thinker.audio_tower.forward = torch.compile(
-                hf_model.thinker.audio_tower.forward, mode="max-autotune-no-cudagraphs", dynamic=True
+                hf_model.thinker.audio_tower.forward,
+                mode="max-autotune-no-cudagraphs",
+                dynamic=True,
             )
-        self.asr = ASRModelHandle(model=model, compile=compile, attention_backend=attention_backend)
+        self.asr = ASRModelHandle(
+            model=model, compile=compile, attention_backend=attention_backend
+        )
         self.loaded["asr"] = {
             "path": model_path,
             "compile": compile,
@@ -58,7 +66,9 @@ class ModelRegistry:
         }
         return self.asr
 
-    def load_llm(self, model_path: str, compile: bool = False, lora_adapter: str | None = None) -> LLMModelHandle:
+    def load_llm(
+        self, model_path: str, compile: bool = False, lora_adapter: str | None = None
+    ) -> LLMModelHandle:
         if self.llm is not None:
             return self.llm
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -74,15 +84,23 @@ class ModelRegistry:
 
             model = PeftModel.from_pretrained(model, lora_adapter)
         if compile:
-            model.forward = torch.compile(model.forward, mode="max-autotune-no-cudagraphs", dynamic=True)
+            model.forward = torch.compile(
+                model.forward, mode="max-autotune-no-cudagraphs", dynamic=True
+            )
         self.llm = LLMModelHandle(model=model, tokenizer=tokenizer, compile=compile)
-        self.loaded["llm"] = {"path": model_path, "compile": compile, "lora_adapter": lora_adapter}
+        self.loaded["llm"] = {
+            "path": model_path,
+            "compile": compile,
+            "lora_adapter": lora_adapter,
+        }
         return self.llm
 
     def transcribe(self, audio_path: str, language: str | None = None) -> str:
         if self.asr is None:
             raise RuntimeError("ASR model not loaded")
-        results = self.asr.model.transcribe(audio=audio_path, language=language, return_time_stamps=False)
+        results = self.asr.model.transcribe(
+            audio=audio_path, language=language, return_time_stamps=False
+        )
         return results[0].text
 
     def generate_text(
@@ -100,10 +118,20 @@ class ModelRegistry:
         inputs = self.llm.tokenizer(prompt, return_tensors="pt").input_ids.cuda()
         if use_spec:
             result = speculative_generate(
-                self.llm.model, inputs, self.llm.tokenizer, max_new_tokens=max_new_tokens, gamma=gamma, ngram=ngram
+                self.llm.model,
+                inputs,
+                self.llm.tokenizer,
+                max_new_tokens=max_new_tokens,
+                gamma=gamma,
+                ngram=ngram,
             )
         else:
-            result = greedy_generate(self.llm.model, inputs, self.llm.tokenizer, max_new_tokens=max_new_tokens)
+            result = greedy_generate(
+                self.llm.model,
+                inputs,
+                self.llm.tokenizer,
+                max_new_tokens=max_new_tokens,
+            )
         return result.text, {
             "tokens": result.tokens,
             "wall_time_s": result.wall_time_s,
@@ -114,9 +142,13 @@ class ModelRegistry:
     def list_models(self) -> list[dict[str, Any]]:
         models = []
         if self.asr is not None:
-            models.append({"id": "qwen3-asr", "type": "asr", **self.loaded.get("asr", {})})
+            models.append(
+                {"id": "qwen3-asr", "type": "asr", **self.loaded.get("asr", {})}
+            )
         if self.llm is not None:
-            models.append({"id": "qwen3-text", "type": "llm", **self.loaded.get("llm", {})})
+            models.append(
+                {"id": "qwen3-text", "type": "llm", **self.loaded.get("llm", {})}
+            )
         return models
 
 

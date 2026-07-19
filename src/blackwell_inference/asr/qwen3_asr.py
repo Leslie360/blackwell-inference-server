@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import math
 import time
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -53,9 +52,13 @@ def benchmark_qwen3_asr(
 
     if compile:
         hf_model = model.model
-        hf_model.thinker.forward = torch.compile(hf_model.thinker.forward, mode="max-autotune-no-cudagraphs", dynamic=True)
+        hf_model.thinker.forward = torch.compile(
+            hf_model.thinker.forward, mode="max-autotune-no-cudagraphs", dynamic=True
+        )
         hf_model.thinker.audio_tower.forward = torch.compile(
-            hf_model.thinker.audio_tower.forward, mode="max-autotune-no-cudagraphs", dynamic=True
+            hf_model.thinker.audio_tower.forward,
+            mode="max-autotune-no-cudagraphs",
+            dynamic=True,
         )
 
     audios = [audio_path] * batch_size

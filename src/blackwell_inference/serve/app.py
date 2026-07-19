@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import tempfile
 import time
@@ -47,7 +46,11 @@ async def dashboard():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "cuda": torch.cuda.is_available(), "models": len(registry.loaded)}
+    return {
+        "status": "ok",
+        "cuda": torch.cuda.is_available(),
+        "models": len(registry.loaded),
+    }
 
 
 @app.get("/v1/models", response_model=ModelList)
@@ -57,10 +60,14 @@ async def list_models():
 
 
 @app.post("/v1/audio/transcriptions", response_model=TranscriptionResponse)
-async def transcribe(file: UploadFile = File(...), model: str = "qwen3-asr", language: str | None = None):
+async def transcribe(
+    file: UploadFile = File(...), model: str = "qwen3-asr", language: str | None = None
+):
     if registry.asr is None:
         raise HTTPException(status_code=503, detail="ASR model not loaded")
-    with tempfile.NamedTemporaryFile(delete=False, suffix=Path(file.filename or "audio.wav").suffix) as tmp:
+    with tempfile.NamedTemporaryFile(
+        delete=False, suffix=Path(file.filename or "audio.wav").suffix
+    ) as tmp:
         tmp.write(await file.read())
         tmp_path = tmp.name
     try:
@@ -114,11 +121,17 @@ async def benchmark(request: BenchmarkRequest):
             backend=request.backend,
             latency_ms=result.latency_ms,
             throughput=result.tflops,
-            details={"seq_len": result.seq_len, "head_dim": result.head_dim, "max_err": result.max_err},
+            details={
+                "seq_len": result.seq_len,
+                "head_dim": result.head_dim,
+                "max_err": result.max_err,
+            },
         )
     if request.task == "asr":
         if not request.model or not request.audio:
-            raise HTTPException(status_code=400, detail="model and audio required for ASR benchmark")
+            raise HTTPException(
+                status_code=400, detail="model and audio required for ASR benchmark"
+            )
         result = benchmark_qwen3_asr(
             model_path=request.model,
             audio_path=request.audio,

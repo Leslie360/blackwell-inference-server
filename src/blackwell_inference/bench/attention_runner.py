@@ -26,7 +26,9 @@ class AttentionResult:
     max_err: float | None
 
 
-def _create_tensors(B: int, H: int, N: int, D: int, dtype: torch.dtype) -> tuple[torch.Tensor, ...]:
+def _create_tensors(
+    B: int, H: int, N: int, D: int, dtype: torch.dtype
+) -> tuple[torch.Tensor, ...]:
     q = torch.randn(B, H, N, D, device="cuda", dtype=dtype) / math.sqrt(D)
     k = torch.randn(B, H, N, D, device="cuda", dtype=dtype) / math.sqrt(D)
     v = torch.randn(B, H, N, D, device="cuda", dtype=dtype)
@@ -65,7 +67,9 @@ def benchmark_attention(
     if backend == "linear":
         # linear attention = unnormalized causal sum, not softmax
         scores = torch.matmul(q.float(), k.float().transpose(-2, -1))
-        mask = torch.tril(torch.ones(seq_len, seq_len, device=q.device, dtype=torch.bool))
+        mask = torch.tril(
+            torch.ones(seq_len, seq_len, device=q.device, dtype=torch.bool)
+        )
         scores = scores.masked_fill(~mask, 0.0)
         ref = torch.matmul(scores, v.float()).to(q.dtype)
     else:
@@ -74,8 +78,12 @@ def benchmark_attention(
     err = (out.float() - ref.float()).abs().max().item()
 
     # causal attention FLOPs ~2*B*H*N^2*D; non-causal ~4*B*H*N^2*D
-    flops = (2.0 if causal else 4.0) * batch * heads * seq_len * seq_len * head_dim * 1e-12
-    t = _time(lambda: attention_forward(backend, q, k, v, causal=causal), repeats=repeats)
+    flops = (
+        (2.0 if causal else 4.0) * batch * heads * seq_len * seq_len * head_dim * 1e-12
+    )
+    t = _time(
+        lambda: attention_forward(backend, q, k, v, causal=causal), repeats=repeats
+    )
     return AttentionResult(
         backend=backend,
         batch=batch,
@@ -101,12 +109,16 @@ def run_grid(
     for backend in backends:
         for N in seq_lens:
             try:
-                res = benchmark_attention(backend, batch, heads, N, causal=causal, repeats=repeats)
+                res = benchmark_attention(
+                    backend, batch, heads, N, causal=causal, repeats=repeats
+                )
             except Exception as e:
                 print(f"[warn] {backend} N={N}: {e}")
                 continue
             results.append(res)
-            print(f"{backend:8s} N={N:5d} {res.latency_ms:8.3f} ms  {res.tflops:6.1f} TFLOPS  err={res.max_err:.2e}")
+            print(
+                f"{backend:8s} N={N:5d} {res.latency_ms:8.3f} ms  {res.tflops:6.1f} TFLOPS  err={res.max_err:.2e}"
+            )
     return results
 
 

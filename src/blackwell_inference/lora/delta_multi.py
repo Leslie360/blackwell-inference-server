@@ -75,12 +75,18 @@ class MultiDeltaLoRAModel:
                 self._lora_layers[layer_name].weight.data += delta
         self._current_adapter = adapter_name
 
-    def generate(self, prompt: str, adapter: str | None = None, max_new_tokens: int = 64) -> str:
+    def generate(
+        self, prompt: str, adapter: str | None = None, max_new_tokens: int = 64
+    ) -> str:
         self._apply_delta(adapter)
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         with torch.no_grad():
-            out = self.base.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
-        return self.tokenizer.decode(out[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+            out = self.base.generate(
+                **inputs, max_new_tokens=max_new_tokens, do_sample=False
+            )
+        return self.tokenizer.decode(
+            out[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True
+        )
 
 
 def benchmark_delta_multi(
@@ -105,7 +111,11 @@ def benchmark_delta_multi(
 
     # baseline
     t = _time(model.generate, prompt, adapter=None, max_new_tokens=max_new_tokens)
-    results.append(DeltaMultiBenchResult("base", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9))
+    results.append(
+        DeltaMultiBenchResult(
+            "base", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9
+        )
+    )
     torch.cuda.reset_peak_memory_stats()
 
     # each adapter
@@ -113,7 +123,12 @@ def benchmark_delta_multi(
         model.load_adapter(name, path)
         t = _time(model.generate, prompt, adapter=name, max_new_tokens=max_new_tokens)
         results.append(
-            DeltaMultiBenchResult(f"adapter:{name}", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9)
+            DeltaMultiBenchResult(
+                f"adapter:{name}",
+                t,
+                max_new_tokens / t,
+                torch.cuda.max_memory_allocated() / 1e9,
+            )
         )
         torch.cuda.reset_peak_memory_stats()
 
@@ -126,6 +141,13 @@ def benchmark_delta_multi(
             model.generate(prompt, adapter=names[1], max_new_tokens=max_new_tokens)
 
         t = _time(_switch) / 2
-        results.append(DeltaMultiBenchResult("switching", t, max_new_tokens / t, torch.cuda.max_memory_allocated() / 1e9))
+        results.append(
+            DeltaMultiBenchResult(
+                "switching",
+                t,
+                max_new_tokens / t,
+                torch.cuda.max_memory_allocated() / 1e9,
+            )
+        )
 
     return results

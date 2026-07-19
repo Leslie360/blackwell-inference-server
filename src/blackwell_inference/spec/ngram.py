@@ -35,7 +35,7 @@ class NGramProposer:
         """
         if len(context) < self.n + 1:
             return []
-        key = context[-self.n:]
+        key = context[-self.n :]
         for i in range(len(context) - self.n - 1, -1, -1):
             if context[i : i + self.n] == key and context[i + self.n] == next_token:
                 return context[i + self.n + 1 : i + self.n + 1 + self.gamma]
@@ -48,7 +48,9 @@ def _truncate_cache(past_key_values, length: int):
         return past_key_values
     for i in range(len(past_key_values.key_cache)):
         past_key_values.key_cache[i] = past_key_values.key_cache[i][:, :, :length, :]
-        past_key_values.value_cache[i] = past_key_values.value_cache[i][:, :, :length, :]
+        past_key_values.value_cache[i] = past_key_values.value_cache[i][
+            :, :, :length, :
+        ]
     return past_key_values
 
 
@@ -132,12 +134,20 @@ def speculative_generate(
                 next_token = logits[-1].argmax().unsqueeze(0)
                 new_tokens += add
 
-        if eos_token_id is not None and next_token.item() == eos_token_id and new_tokens < max_new_tokens:
-            generated = torch.cat([generated, next_token.unsqueeze(0).unsqueeze(0)], dim=1)
+        if (
+            eos_token_id is not None
+            and next_token.item() == eos_token_id
+            and new_tokens < max_new_tokens
+        ):
+            generated = torch.cat(
+                [generated, next_token.unsqueeze(0).unsqueeze(0)], dim=1
+            )
             new_tokens += 1
 
     wall = time.perf_counter() - t0
-    text = tokenizer.decode(generated[0, input_ids.shape[1]:], skip_special_tokens=True)
+    text = tokenizer.decode(
+        generated[0, input_ids.shape[1] :], skip_special_tokens=True
+    )
     return SpecResult(
         text=text,
         tokens=new_tokens,
@@ -166,14 +176,18 @@ def greedy_generate(
         while new_tokens < max_new_tokens:
             if eos_token_id is not None and next_token.item() == eos_token_id:
                 break
-            out = model(input_ids=next_token.unsqueeze(1), past_key_values=past, use_cache=True)
+            out = model(
+                input_ids=next_token.unsqueeze(1), past_key_values=past, use_cache=True
+            )
             past = out.past_key_values
             next_token = out.logits[:, -1, :].argmax(dim=-1)
             generated = torch.cat([generated, next_token.unsqueeze(1)], dim=1)
             new_tokens += 1
 
     wall = time.perf_counter() - t0
-    text = tokenizer.decode(generated[0, input_ids.shape[1]:], skip_special_tokens=True)
+    text = tokenizer.decode(
+        generated[0, input_ids.shape[1] :], skip_special_tokens=True
+    )
     return SpecResult(
         text=text,
         tokens=new_tokens,

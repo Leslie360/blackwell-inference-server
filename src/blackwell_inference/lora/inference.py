@@ -18,7 +18,12 @@ class LoRABenchResult:
 
 
 class LoRAModel:
-    def __init__(self, base_model_path: str, adapter_path: str | None = None, device: str = "cuda"):
+    def __init__(
+        self,
+        base_model_path: str,
+        adapter_path: str | None = None,
+        device: str = "cuda",
+    ):
         self.base_model_path = base_model_path
         self.adapter_path = adapter_path
         self.device = device
@@ -56,7 +61,9 @@ class LoRAModel:
             self._merged = peft_copy.merge_and_unload()
         return self._merged
 
-    def generate(self, prompt: str, mode: str = "base", max_new_tokens: int = 64) -> str:
+    def generate(
+        self, prompt: str, mode: str = "base", max_new_tokens: int = 64
+    ) -> str:
         if mode == "base":
             model = self.load_base()
         elif mode == "fused":
@@ -68,8 +75,12 @@ class LoRAModel:
 
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
         with torch.no_grad():
-            out = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
-        return self.tokenizer.decode(out[0, inputs["input_ids"].shape[1]:], skip_special_tokens=True)
+            out = model.generate(
+                **inputs, max_new_tokens=max_new_tokens, do_sample=False
+            )
+        return self.tokenizer.decode(
+            out[0, inputs["input_ids"].shape[1] :], skip_special_tokens=True
+        )
 
 
 def benchmark_lora(

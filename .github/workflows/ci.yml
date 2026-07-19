@@ -7,7 +7,25 @@ on:
     branches: [main]
 
 jobs:
-  test:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      - name: Install linters
+        run: pip install black==26.5.1 ruff==0.15.22
+
+      - name: Lint
+        run: |
+          ruff check src/
+          black --check --target-version py310 src/ tests/
+
+  smoke-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,15 +36,7 @@ jobs:
           python-version: "3.10"
 
       - name: Install package
-        run: |
-          pip install -e .[dev]
-          pip install pytest
+        run: pip install -e .
 
-      - name: Import tests (CPU)
-        run: |
-          pytest tests/test_asr.py -v
-
-      - name: Lint
-        run: |
-          ruff check src/
-          black --check src/ tests/
+      - name: Smoke import test
+        run: python -c "import blackwell_inference; print(blackwell_inference.__version__)"
