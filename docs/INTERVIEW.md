@@ -36,9 +36,13 @@ A：WSL2 默认禁止用户态访问 GPU performance counters（`ERR_NVGPUCTRPER
 
 ### Q9：LoRA merge 和 fused 哪个好？
 
-A：merge 好。实测 Qwen3-0.6B 上 merged 和 base 几乎一样快（78.9 vs 78.5 tok/s），fused 慢 33%（52.6 tok/s），因为每次 forward 都要额外算 LoRA 的 A/B 矩阵。多 LoRA serving 为了省显存才用 fused。我一开始还踩过一个坑：`merge_and_unload` 会原地改 base model，导致 fused 被污染，显示和 base 一样快，后来用独立副本 merge 才测出真实差距。
+A：merge 好。实测 Qwen3-0.6B 上 merged 和 base 几乎一样快（78.9 vs 76.4 tok/s），fused 慢 33%（52.6 tok/s），因为每次 forward 都要额外算 LoRA 的 A/B 矩阵。多 LoRA serving 为了省显存才用 fused。我一开始还踩过两个坑：一是 `merge_and_unload` 会原地改 base model，导致 fused 被污染显示和 base 一样快；二是用 `PeftModel.from_pretrained(self.base, ...)` 提取 delta 会原地给 base 注入 LoRA wrapper。后来用独立副本 merge、用临时副本提取 delta 才测出真实差距。
 
-### Q10：如果让你继续做，下一步是什么？
+### Q10：怎么把 fused 的 33% 开销干掉？
+
+A：预计算 `ΔW = B @ A`，把 delta 融进 base weight，推理时只做一次 GEMM。我这样做了之后，多 LoRA serving 从 52.6 tok/s 追平到 76.3 tok/s（≈base），同时保留一个共享 base model。这是“merge 的速度 + fused 的显存”的折中。
+
+### Q11：如果让你继续做，下一步是什么？
 
 A：接 EAGLE 投机解码（用一个小 draft model 替代 n-gram，通用文本也能加速）；支持更多模型；做 Hugging Face Spaces 在线 demo。
 

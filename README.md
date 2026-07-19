@@ -124,18 +124,14 @@ N-gram self-speculation works when output is repetitive/structured; it adds negl
 
 ### LoRA inference (Qwen3-0.6B, r=16 / r=128)
 
-| Adapter | Mode | Latency | Throughput | vs base |
-|---------|------|--------:|-----------:|--------:|
-| r=16 | base | 0.815 s | 78.5 tok/s | 1.00× |
-| r=16 | merged | 0.811 s | 78.9 tok/s | 1.01× |
-| r=16 | fused | 1.216 s | 52.6 tok/s | **0.67×** |
-| r=128 | base | 0.827 s | 77.4 tok/s | 1.00× |
-| r=128 | merged | 0.823 s | 77.8 tok/s | 1.01× |
-| r=128 | fused | 1.191 s | 53.8 tok/s | **0.69×** |
+| Approach | r=16 tok/s | r=128 tok/s | vs base | Note |
+|----------|-----------:|------------:|--------:|------|
+| base | 76.4 | 76.4 | 1.00× | |
+| merged | 78.9 | 77.8 | ~1.00× | single adapter, merge into base |
+| fused (peft) | 52.6 | 53.8 | **0.67×** | extra LoRA GEMMs |
+| **delta-fused** | **76.3** | **76.2** | **~1.00×** | **precompute ΔW=B@A, single GEMM** |
 
-**Key finding**: merging LoRA into base weights is free; fused (no-merge) inference is ~33% slower on Qwen3-0.6B due to extra LoRA GEMMs. Multi-LoRA serving trades this overhead for memory savings (one base + N small adapters vs N full models).
-
-**Bug story**: an earlier version reported fused ≈ base because `merge_and_unload` mutated the shared base model, contaminating the fused path. Fixed by merging into a separate copy.
+**Key optimization**: precomputing `ΔW = B @ A` and fusing it into base weights eliminates the 33% fused-LoRA overhead, making multi-LoRA serving match base speed while keeping one shared base model. Correctness verified against PEFT fused and merged outputs.
 
 ---
 

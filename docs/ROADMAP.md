@@ -11,6 +11,7 @@
 - [x] n-gram speculative decoding with correctness + benchmark
 - [x] LoRA adapter loading / merge / fused inference with correctness + benchmark
 - [x] multi-LoRA serving benchmark (fused overhead ~33%)
+- [x] **delta-fused LoRA optimization** (precompute ΔW=B@A, eliminate fused overhead)
 - [ ] README + docs complete
 
 ## v0.2

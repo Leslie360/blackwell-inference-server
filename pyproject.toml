@@ -44,6 +44,7 @@ blackwell-asr-bench = "blackwell_inference.bench.asr_cli:main"
 blackwell-spec-bench = "blackwell_inference.bench.spec_cli:main"
 blackwell-lora-bench = "blackwell_inference.bench.lora_cli:main"
 blackwell-multi-lora-bench = "blackwell_inference.bench.multi_lora_cli:main"
+blackwell-delta-lora-bench = "blackwell_inference.bench.delta_multi_cli:main"
 blackwell-serve = "blackwell_inference.serve.cli:main"
 
 [tool.setuptools.packages.find]

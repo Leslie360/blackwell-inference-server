@@ -35,17 +35,20 @@ Qwen3-ASR uses a `thinker` decoder + `audio_tower`. `torch.compile` on these two
 
 **Corrected findings (after fixing a contamination bug)**:
 
-| Mode | r=16 tok/s | r=128 tok/s |
-|------|-----------:|------------:|
-| base | 78.5 | 77.4 |
+| Approach | r=16 tok/s | r=128 tok/s |
+|----------|-----------:|------------:|
+| base | 76.4 | 76.4 |
 | merged | 78.9 | 77.8 |
-| fused | 52.6 | 53.8 |
+| fused (peft) | 52.6 | 53.8 |
+| **delta-fused** | **76.3** | **76.2** |
 
 - merged ≈ base：LoRA 合权不伤性能
 - fused 慢 ~33%：额外 LoRA GEMM 开销
-- 多 LoRA serving 用 fused 换显存节省
+- **delta-fused ≈ base**：预计算 `ΔW = B @ A` 融进 base weight，单 GEMM 推理，消除 fused 开销
 
 **Bug**: 早期版本 fused 显示和 base 一样快，是因为 `merge_and_unload` 原地修改了共享 base model，污染了 fused 路径。修复方法：merge 到独立副本。
+
+**第二个 bug**: 用 `PeftModel.from_pretrained(self.base, ...)` 提取 delta 会原地给 base 注入 LoRA wrapper，导致 base 变慢。修复方法：用临时副本提取 delta。
 
 ## Speculative decoding
 
