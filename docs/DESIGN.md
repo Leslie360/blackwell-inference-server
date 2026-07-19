@@ -24,6 +24,17 @@ This project packages working attention kernels, ASR acceleration recipes, and b
 
 Qwen3-ASR uses a `thinker` decoder + `audio_tower`. `torch.compile` on these two modules reduces Python generate-loop overhead and fuses small kernels, yielding ~2.45× single-request speedup on RTX 5070 Ti.
 
+## LoRA inference
+
+`blackwell_inference.lora` supports:
+
+- loading PEFT LoRA adapters for Qwen3-0.6B
+- weight merge (`merge_and_unload`) vs fused inference (no merge)
+- correctness test (merged and fused produce identical output)
+- benchmark CLI (`blackwell-lora-bench`)
+
+On Qwen3-0.6B with r=16, base/merged/fused all run at ~78 tok/s; LoRA overhead is negligible.
+
 ## Speculative decoding
 
 `blackwell_inference.spec.ngram` implements self-speculative (n-gram / prompt-lookup) decoding:

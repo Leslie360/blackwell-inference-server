@@ -9,6 +9,7 @@
 - [x] FastAPI ASR server
 - [x] pytest correctness tests
 - [x] n-gram speculative decoding with correctness + benchmark
+- [x] LoRA adapter loading / merge / fused inference with correctness + benchmark
 - [ ] README + docs complete
 
 ## v0.2

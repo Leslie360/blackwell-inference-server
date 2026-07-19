@@ -33,6 +33,7 @@ Consumer Blackwell (SM120) is poorly served by existing inference stacks:
   - `GET /v1/profiles` — list saved profiles
 - **Web dashboard** — built-in UI for benchmarks and transcription
 - **Attention backends** — SDPA / Triton linear attention / raw CUDA KDA / Mini-Attention SM120
+- **LoRA inference** — adapter loading, weight merge, fused inference with correctness tests
 - **Dockerfile** — provided for containerized deployment
 
 ---
@@ -120,6 +121,16 @@ docker compose up --build
 | General creative prompt | 83.4 | 78.2 | 0.94× | 4.2% |
 
 N-gram self-speculation works when output is repetitive/structured; it adds negligible overhead otherwise.
+
+### LoRA inference (Qwen3-0.6B, r=16)
+
+| Mode | Latency | Throughput | Memory |
+|------|--------:|-----------:|-------:|
+| base | 0.816 s | 78.4 tok/s | 1.50 GB |
+| merged | 0.818 s | 78.2 tok/s | 1.24 GB |
+| fused | 0.811 s | 78.9 tok/s | 1.22 GB |
+
+LoRA merge does not hurt performance; fused inference overhead is negligible for small adapters. Correctness test verifies merged and fused produce identical output.
 
 ---
 

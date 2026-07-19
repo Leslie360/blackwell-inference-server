@@ -58,7 +58,7 @@ class ModelRegistry:
         }
         return self.asr
 
-    def load_llm(self, model_path: str, compile: bool = False) -> LLMModelHandle:
+    def load_llm(self, model_path: str, compile: bool = False, lora_adapter: str | None = None) -> LLMModelHandle:
         if self.llm is not None:
             return self.llm
         from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -69,10 +69,14 @@ class ModelRegistry:
             dtype=torch.float16,
             device_map="cuda",
         )
+        if lora_adapter:
+            from peft import PeftModel
+
+            model = PeftModel.from_pretrained(model, lora_adapter)
         if compile:
             model.forward = torch.compile(model.forward, mode="max-autotune-no-cudagraphs", dynamic=True)
         self.llm = LLMModelHandle(model=model, tokenizer=tokenizer, compile=compile)
-        self.loaded["llm"] = {"path": model_path, "compile": compile}
+        self.loaded["llm"] = {"path": model_path, "compile": compile, "lora_adapter": lora_adapter}
         return self.llm
 
     def transcribe(self, audio_path: str, language: str | None = None) -> str:
