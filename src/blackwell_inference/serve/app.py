@@ -36,6 +36,17 @@ app = FastAPI(
 _STATIC_DIR = Path(__file__).resolve().parent / "static"
 
 
+def _time_op(fn, repeats: int = 20, warmup: int = 5) -> float:
+    for _ in range(warmup):
+        fn()
+    torch.cuda.synchronize()
+    t0 = time.perf_counter()
+    for _ in range(repeats):
+        fn()
+    torch.cuda.synchronize()
+    return (time.perf_counter() - t0) / repeats
+
+
 @app.get("/", response_class=HTMLResponse)
 async def dashboard():
     index = _STATIC_DIR / "index.html"
@@ -144,6 +155,48 @@ async def benchmark(request: BenchmarkRequest):
             latency_ms=result.latency_s * 1000,
             throughput=result.throughput_x_realtime,
             details={"batch_size": result.batch_size, "memory_gb": result.memory_gb},
+        )
+    if request.task == "ops":
+        from blackwell_ops.cuda import rmsnorm as cuda_rmsnorm
+        from blackwell_ops.cuda import rope as cuda_rope
+        from blackwell_ops.cuda import swiglu as cuda_swiglu
+        from blackwell_ops.kernels import precompute_cos_sin
+
+        if request.backend == "rmsnorm":
+            x = torch.randn(
+                request.batch_size, request.seq_len, device="cuda", dtype=torch.float16
+            )
+            w = torch.randn(request.seq_len, device="cuda", dtype=torch.float16)
+            t = _time_op(lambda: cuda_rmsnorm(x, w), repeats=request.repeats)
+        elif request.backend == "rope":
+            x = torch.randn(
+                request.batch_size,
+                8,
+                request.seq_len,
+                64,
+                device="cuda",
+                dtype=torch.float16,
+            )
+            cos, sin = precompute_cos_sin(request.seq_len, 64, device="cuda")
+            t = _time_op(lambda: cuda_rope(x, cos, sin), repeats=request.repeats)
+        elif request.backend == "swiglu":
+            gate = torch.randn(
+                request.batch_size, request.seq_len, device="cuda", dtype=torch.float16
+            )
+            up = torch.randn(
+                request.batch_size, request.seq_len, device="cuda", dtype=torch.float16
+            )
+            t = _time_op(lambda: cuda_swiglu(gate, up), repeats=request.repeats)
+        else:
+            raise HTTPException(
+                status_code=400, detail=f"unknown ops backend: {request.backend}"
+            )
+        return BenchmarkResponse(
+            task="ops",
+            backend=request.backend,
+            latency_ms=t * 1000,
+            throughput=0.0,
+            details={"batch_size": request.batch_size, "seq_len": request.seq_len},
         )
     raise HTTPException(status_code=400, detail=f"unknown task: {request.task}")
 

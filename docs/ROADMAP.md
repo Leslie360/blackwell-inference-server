@@ -13,6 +13,10 @@
 - [x] multi-LoRA serving benchmark (fused overhead ~33%)
 - [x] **delta-fused LoRA optimization** (precompute ΔW=B@A, eliminate fused overhead)
 - [x] **blackwell-ops operator library**: RMSNorm, RoPE, INT8 GEMM (correctness + benchmark)
+- [x] **blackwell-ops CUDA kernels**: RMSNorm, fused residual+RMSNorm, RoPE, SwiGLU, KV INT8 quant, LoRA delta
+- [x] **tiled LoRA delta kernel**: shared-memory tiling; ~57% of default CUTLASS FP16, ~24% of cuBLAS
+- [x] **MLA decode kernel**: weight-absorption structure, global-memory streaming
+- [x] **CUTLASS comparison**: measured CUTLASS FP16 vs our kernel vs cuBLAS
 - [ ] README + docs complete
 
 ## v0.2

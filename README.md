@@ -123,15 +123,18 @@ docker compose up --build
 
 N-gram self-speculation works when output is repetitive/structured; it adds negligible overhead otherwise.
 
-### blackwell-ops (Triton, vs PyTorch reference)
+### blackwell-ops (Triton/CUDA, vs PyTorch reference & CUTLASS)
 
-| Operator | Shape | Speedup |
-|----------|-------|--------:|
-| RMSNorm | 8192×4096 | **8.50×** |
-| RoPE | 1×32×4096×128 | **7.12×** |
-| INT8 weight-only GEMM | 8192×4096×14336 | **0.49×** (no int8 tensor core) |
+| Operator | Backend | vs PyTorch | Note |
+|----------|---------|-----------:|------|
+| RMSNorm | CUDA | **3.13–7.44×** | |
+| RoPE | CUDA | **1.63–6.45×** | |
+| SwiGLU | CUDA | **2.63–5.14×** | |
+| KV INT8 quant/dequant | CUDA | — | 2× compression |
+| INT8 weight-only GEMM | Triton | **0.49×** | no int8 tensor core |
+| **LoRA delta (B@A)** | **CUDA tiled** | **vs CUTLASS: 0.57× / vs cuBLAS: 0.24×** | fp16 GEMM |
 
-INT8 GEMM is slower than cuBLAS FP16 because our kernel does not use SM120 int8 tensor cores — a negative result that explains why torchao W8A16 fails on this card.
+**CUTLASS comparison (LoRA delta, fp16)**: our tiled kernel 12.8–13.1 TFLOPS, CUTLASS default 22.3–23.1 TFLOPS, cuBLAS 54.5–62.5 TFLOPS. We reach ~57% of CUTLASS default and ~24% of cuBLAS — the gap is tensor-core warpgroup scheduling and software pipelining.
 
 ### LoRA inference (Qwen3-0.6B, r=16 / r=128)
 
